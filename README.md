@@ -83,7 +83,7 @@ A comprehensive BMI (Body Mass Index) calculator with calorie tracking and visua
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](License) file for details.
 
 ## Acknowledgments
 
