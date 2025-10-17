@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import matplotlib
-matplotlib.use('TkAgg')  # DIESE ZEILE ZUERST!
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
@@ -26,33 +26,13 @@ class BMI_Category(Enum):
     OBESE_II = "Obese Class II"
     OBESE_III = "Obese Class III"
 
-class Gender(Enum):
-    MALE = "male"
-    FEMALE = "female"
-
-class ActivityLevel(Enum):
-    SEDENTARY = 1.2
-    LIGHT = 1.375
-    MODERATE = 1.55
-    ACTIVE = 1.725
-    VERY_ACTIVE = 1.9
-
-class BMI_Category(Enum):
-    UNDERWEIGHT = "Underweight"
-    NORMAL = "Normal weight"
-    OVERWEIGHT = "Overweight"
-    OBESE_I = "Obese Class I"
-    OBESE_II = "Obese Class II"
-    OBESE_III = "Obese Class III"
-
 class BMICalculatorGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("BMI Calculator & Calorie Goal Tracker")
-        self.root.geometry("600x950")  # Zurück zur originalen Größe
+        self.root.geometry("1100x700")
         self.root.resizable(True, True)
         
-        # Store user data for plotting
         self.current_age = None
         self.current_weight = None
         self.current_height = None
@@ -71,17 +51,21 @@ class BMICalculatorGUI:
 
     def create_widgets(self):
         """Create all GUI widgets"""
-        # Main frame
-        main_frame = ttk.Frame(self.root, padding="20")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        # Main container
+        main_container = ttk.Frame(self.root, padding="10")
+        main_container.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # LEFT SIDE - Input and Results
+        left_frame = ttk.Frame(main_container)
+        left_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 10))
         
         # Title
-        title_label = ttk.Label(main_frame, text="BMI Calculator & Calorie Goal Tracker", 
+        title_label = ttk.Label(left_frame, text="BMI Calculator & Calorie Goal Tracker", 
                                style='Header.TLabel')
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
+        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 15))
         
         # Personal Information Section
-        personal_frame = ttk.LabelFrame(main_frame, text="Personal Information", padding="10")
+        personal_frame = ttk.LabelFrame(left_frame, text="Personal Information", padding="10")
         personal_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
         # Age
@@ -107,11 +91,13 @@ class BMICalculatorGUI:
         # Gender
         ttk.Label(personal_frame, text="Gender:").grid(row=4, column=0, sticky=tk.W, pady=2)
         self.gender_var = tk.StringVar(value="male")
-        ttk.Radiobutton(personal_frame, text="Male", variable=self.gender_var, value="male").grid(row=4, column=1, sticky=tk.W)
-        ttk.Radiobutton(personal_frame, text="Female", variable=self.gender_var, value="female").grid(row=4, column=2, sticky=tk.W)
+        ttk.Radiobutton(personal_frame, text="Male", variable=self.gender_var, value="male", 
+                       command=self.on_gender_change).grid(row=4, column=1, sticky=tk.W)
+        ttk.Radiobutton(personal_frame, text="Female", variable=self.gender_var, value="female",
+                       command=self.on_gender_change).grid(row=4, column=2, sticky=tk.W)
         
         # Activity Level Section
-        activity_frame = ttk.LabelFrame(main_frame, text="Activity Level", padding="10")
+        activity_frame = ttk.LabelFrame(left_frame, text="Activity Level", padding="10")
         activity_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
         self.activity_var = tk.StringVar(value="sedentary")
@@ -127,7 +113,8 @@ class BMICalculatorGUI:
             ttk.Radiobutton(activity_frame, text=text, variable=self.activity_var, 
                            value=value).grid(row=i, column=0, sticky=tk.W, pady=2)
         
-        button_frame = ttk.Frame(main_frame)
+        # Buttons
+        button_frame = ttk.Frame(left_frame)
         button_frame.grid(row=3, column=0, columnspan=2, pady=10)
         
         ttk.Button(button_frame, text="Calculate", command=self.calculate).pack(side=tk.LEFT, padx=5)
@@ -135,7 +122,7 @@ class BMICalculatorGUI:
         ttk.Button(button_frame, text="Exit", command=self.root.quit).pack(side=tk.LEFT, padx=5)
         
         # Results Section
-        results_frame = ttk.LabelFrame(main_frame, text="Results", padding="10")
+        results_frame = ttk.LabelFrame(left_frame, text="Results", padding="10")
         results_frame.grid(row=4, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(10, 0))
         
         # BMI Results
@@ -156,7 +143,7 @@ class BMICalculatorGUI:
         self.bmr_label = ttk.Label(results_frame, text="")
         self.bmr_label.grid(row=3, column=1, sticky=tk.W, pady=2)
         
-        ttk.Label(results_frame, text="TDEE (Total Daily Energy Expenditure):").grid(row=4, column=0, sticky=tk.W, pady=2)
+        ttk.Label(results_frame, text="TDEE (Total Daily Energy):").grid(row=4, column=0, sticky=tk.W, pady=2)
         self.tdee_label = ttk.Label(results_frame, text="")
         self.tdee_label.grid(row=4, column=1, sticky=tk.W, pady=2)
         
@@ -168,43 +155,59 @@ class BMICalculatorGUI:
         self.time_goal_label = ttk.Label(results_frame, text="")
         self.time_goal_label.grid(row=6, column=1, sticky=tk.W, pady=2)
         
-        chart_frame = ttk.LabelFrame(main_frame, text="BMI Chart - Weight Ranges by Age", padding="10")
-        chart_frame.grid(row=5, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(10, 0))
+        # RIGHT SIDE - Chart
+        chart_frame = ttk.LabelFrame(main_container, text="BMI Chart - Weight Ranges by Age", padding="10")
+        chart_frame.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Create canvas for chart
-        self.chart_canvas = tk.Canvas(chart_frame, width=450, height=250, bg='white', 
+        self.chart_canvas = tk.Canvas(chart_frame, width=550, height=600, bg='white', 
                                     highlightthickness=1, highlightbackground='black')
-        self.chart_canvas.pack(fill=tk.BOTH, expand=True, pady=5)
+        self.chart_canvas.pack(fill=tk.BOTH, expand=True)
         
-        # Configure grid weights for responsive layout
+        # Configure grid weights
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
-        main_frame.columnconfigure(0, weight=1)
+        main_container.columnconfigure(0, weight=0)
+        main_container.columnconfigure(1, weight=1)
+        main_container.rowconfigure(0, weight=1)
         
         self.draw_bmi_chart()
+
     def draw_bmi_chart(self):
         """Draw BMI chart in the main window"""
         self.chart_canvas.delete("all")
         
         # Chart dimensions
-        chart_width = 400
-        chart_height = 200
-        margin_left = 50
-        margin_top = 30
+        chart_width = 480
+        chart_height = 520
+        margin_left = 60
+        margin_top = 40
         
         # Draw chart border
         self.chart_canvas.create_rectangle(margin_left, margin_top, 
                                          margin_left + chart_width, margin_top + chart_height, 
-                                         outline='black')
+                                         outline='black', width=2)
         
-        # BMI categories with colors
-        bmi_categories = [
-            (0, 18.5, "Underweight", "#87CEEB"),
-            (18.5, 25, "Normal Weight", "#90EE90"),  
-            (25, 30, "Overweight", "#FFFF00"),
-            (30, 35, "Obese I", "#FFA500"),
-            (35, 100, "Obese II/III", "#FF0000")
-        ]
+        # Get current gender for display
+        current_gender = self.gender_var.get()
+        
+        # BMI categories - leicht angepasst für Frauen
+        if current_gender == "female":
+            bmi_categories = [
+                (0, 18.5, "Underweight", "#87CEEB"),
+                (18.5, 24, "Normal Weight", "#90EE90"),  
+                (24, 29, "Overweight", "#FFFF00"),
+                (29, 34, "Obese I", "#FFA500"),
+                (34, 100, "Obese II/III", "#FF0000")
+            ]
+        else:  # male
+            bmi_categories = [
+                (0, 18.5, "Underweight", "#87CEEB"),
+                (18.5, 25, "Normal Weight", "#90EE90"),  
+                (25, 30, "Overweight", "#FFFF00"),
+                (30, 35, "Obese I", "#FFA500"),
+                (35, 100, "Obese II/III", "#FF0000")
+            ]
         
         # Draw weight ranges for sample ages
         ages_to_show = list(range(15, 81, 3))
@@ -219,8 +222,8 @@ class BMICalculatorGUI:
             
             # Draw age label on x-axis
             if age % 15 == 0:
-                self.chart_canvas.create_text(x_pos, margin_top + chart_height + 12, 
-                                            text=str(age), font=('Arial', 7))
+                self.chart_canvas.create_text(x_pos, margin_top + chart_height + 15, 
+                                            text=str(age), font=('Arial', 9))
             
             for min_bmi, max_bmi, label, color in bmi_categories:
                 min_weight = min_bmi * (display_height ** 2)
@@ -242,16 +245,20 @@ class BMICalculatorGUI:
                     )
         
         # Draw Y-axis labels
-        for weight in [0, 50, 100, 150]:
+        for weight in [0, 30, 60, 90, 120, 150]:
             y_pos = margin_top + chart_height - (weight / 150) * chart_height
-            self.chart_canvas.create_text(margin_left - 8, y_pos, text=str(weight), 
-                                        font=('Arial', 7), anchor='e')
+            self.chart_canvas.create_text(margin_left - 10, y_pos, text=str(weight), 
+                                        font=('Arial', 9), anchor='e')
+            # Grid line
+            self.chart_canvas.create_line(margin_left, y_pos, margin_left + chart_width, y_pos,
+                                        fill='lightgray', dash=(2, 2))
         
-        # Draw axes labels
-        self.chart_canvas.create_text(margin_left + chart_width/2, margin_top + chart_height + 25, 
-                                    text="Age (years)", font=('Arial', 8, 'bold'))
-        self.chart_canvas.create_text(20, margin_top + chart_height/2, text="Weight (kg)", 
-                                    font=('Arial', 8, 'bold'), angle=90)
+        # Draw axes labels with gender info
+        gender_text = "Male" if current_gender == "male" else "Female"
+        self.chart_canvas.create_text(margin_left + chart_width/2, margin_top + chart_height + 35, 
+                                    text=f"Age (years) - {gender_text}", font=('Arial', 10, 'bold'))
+        self.chart_canvas.create_text(25, margin_top + chart_height/2, text="Weight (kg)", 
+                                    font=('Arial', 10, 'bold'), angle=90)
         
         # Punkt zeichnen wenn Daten vorhanden
         if self.current_age and self.current_weight and self.current_height:
@@ -260,19 +267,23 @@ class BMICalculatorGUI:
                 current_x = margin_left + (current_age_index * bar_width) + (bar_width / 2)
                 current_y = margin_top + chart_height - (self.current_weight / 150) * chart_height
                 
-                self.chart_canvas.create_oval(current_x - 5, current_y - 5, current_x + 5, current_y + 5, 
-                                            fill='blue', outline='darkblue', width=2)
+                self.chart_canvas.create_oval(current_x - 6, current_y - 6, current_x + 6, current_y + 6, 
+                                            fill='blue', outline='darkblue', width=3)
+                self.chart_canvas.create_text(current_x, current_y - 15, text="You", 
+                                            font=('Arial', 9, 'bold'), fill='blue')
         
-        # Draw compact legend
-        legend_x = margin_left + 5
-        legend_y = margin_top + 5
+        # Draw legend
+        legend_x = margin_left + 10
+        legend_y = margin_top + 10
         
         for i, (min_bmi, max_bmi, label, color) in enumerate(bmi_categories):
-            y_pos = legend_y + i * 15
-            self.chart_canvas.create_rectangle(legend_x, y_pos, legend_x + 10, y_pos + 10, 
+            y_pos = legend_y + i * 20
+            self.chart_canvas.create_rectangle(legend_x, y_pos, legend_x + 15, y_pos + 15, 
                                             fill=color, outline='black')
-            self.chart_canvas.create_text(legend_x + 12, y_pos + 5, text=label, 
-                                        font=('Arial', 6), anchor='w')
+            bmi_range = f"BMI {min_bmi}-{max_bmi if max_bmi < 100 else '40+'}"
+            self.chart_canvas.create_text(legend_x + 20, y_pos + 7, text=f"{label} ({bmi_range})", 
+                                        font=('Arial', 8), anchor='w')
+
     def calculate_bmi(self, weight, height):
         """Calculate BMI based on weight and height"""
         bmi = weight / (height ** 2)
@@ -344,7 +355,7 @@ class BMICalculatorGUI:
             if age <= 0 or height <= 0 or weight <= 0 or goal_weight <= 0:
                 raise ValueError("Values must be positive")
                 
-            if height > 300:  # Assuming cm, check if reasonable
+            if height > 300:
                 raise ValueError("Please enter height in centimeters")
                 
             return True, (age, height, weight, goal_weight)
@@ -354,7 +365,6 @@ class BMICalculatorGUI:
     
     def calculate(self):
         """Main calculation function"""
-        # Validate input
         is_valid, result = self.validate_input()
         if not is_valid:
             messagebox.showerror("Input Error", f"Please check your input:\n{result}")
@@ -399,8 +409,8 @@ class BMICalculatorGUI:
         else:
             self.time_goal_label.config(text=f"{calorie_data['weeks_to_goal']} weeks to gain {calorie_data['weight_difference']:.1f} kg")
         
-        # ⭐⭐⭐ NEUE ZEILE: Graph mit Punkt zeichnen ⭐⭐⭐
         self.draw_bmi_chart()
+
     def clear_form(self):
         """Clear all input fields and results"""
         self.age_entry.delete(0, tk.END)
@@ -410,12 +420,10 @@ class BMICalculatorGUI:
         self.gender_var.set("male")
         self.activity_var.set("sedentary")
         
-        # Clear stored data
         self.current_age = None
         self.current_weight = None
         self.current_height = None
         
-        # Clear results
         self.current_bmi_label.config(text="")
         self.bmi_category_label.config(text="")
         self.goal_bmi_label.config(text="")
@@ -423,6 +431,12 @@ class BMICalculatorGUI:
         self.tdee_label.config(text="")
         self.calorie_goal_label.config(text="")
         self.time_goal_label.config(text="")
+        
+        self.draw_bmi_chart()
+    
+    def on_gender_change(self):
+        """Called when gender selection changes"""
+        self.draw_bmi_chart()
 
 def main():
     """Main function to run the application"""
