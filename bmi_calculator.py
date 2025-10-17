@@ -1,5 +1,10 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+import matplotlib
+matplotlib.use('TkAgg')  # DIESE ZEILE ZUERST!
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import numpy as np
 from enum import Enum
 
 class Gender(Enum):
@@ -28,10 +33,14 @@ class BMICalculatorGUI:
         self.root.geometry("500x690")
         self.root.resizable(True, True)
         
-        # Style configuration
+        # Store user data for plotting
+        self.current_age = None
+        self.current_weight = None
+        self.current_height = None
+        
         self.setup_styles()
         self.create_widgets()
-        
+
     def setup_styles(self):
         """Configure styles for the GUI"""
         style = ttk.Style()
@@ -40,7 +49,7 @@ class BMICalculatorGUI:
         style.configure('TButton', font=('Arial', 10))
         style.configure('Header.TLabel', font=('Arial', 12, 'bold'))
         style.configure('Result.TLabel', font=('Arial', 11, 'bold'))
-        
+
     def create_widgets(self):
         """Create all GUI widgets"""
         # Main frame
@@ -104,6 +113,7 @@ class BMICalculatorGUI:
         button_frame.grid(row=3, column=0, columnspan=2, pady=10)
         
         ttk.Button(button_frame, text="Calculate", command=self.calculate).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Show BMI Chart", command=self.show_bmi_chart_alternative).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Clear", command=self.clear_form).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Exit", command=self.root.quit).pack(side=tk.LEFT, padx=5)
         
@@ -145,7 +155,81 @@ class BMICalculatorGUI:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         main_frame.columnconfigure(0, weight=1)
+
+    def show_bmi_chart_alternative(self):
+        """Alternative: Simple BMI chart without external libraries"""
+        if self.current_age is None:
+            messagebox.showwarning("Warning", "Please calculate your BMI first!")
+            return
         
+        chart_window = tk.Toplevel(self.root)
+        chart_window.title("BMI Chart - Your Position")
+        chart_window.geometry("700x500")
+        
+        # Main frame
+        main_frame = ttk.Frame(chart_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title_label = ttk.Label(main_frame, text="BMI Categories and Your Position", 
+                               font=('Arial', 14, 'bold'))
+        title_label.pack(pady=10)
+        
+        # Canvas for visualization
+        canvas_frame = ttk.Frame(main_frame)
+        canvas_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        canvas = tk.Canvas(canvas_frame, width=650, height=350, bg='white', highlightthickness=1, highlightbackground='black')
+        canvas.pack()
+        
+        # BMI categories
+        categories = [
+            (0, 18.5, "Underweight", "#87CEEB"),      # lightblue
+            (18.5, 25, "Normal Weight", "#90EE90"),   # lightgreen
+            (25, 30, "Overweight", "#FFFF00"),        # yellow
+            (30, 35, "Obese I", "#FFA500"),           # orange
+            (35, 40, "Obese II", "#FF0000"),          # red
+            (40, 50, "Obese III", "#8B0000")          # darkred
+        ]
+        
+        # Draw BMI bars
+        bar_width = 80
+        spacing = 10
+        start_x = 50
+        start_y = 50
+        
+        current_bmi = self.calculate_bmi(self.current_weight, self.current_height)
+        
+        for i, (min_bmi, max_bmi, label, color) in enumerate(categories):
+            x = start_x + i * (bar_width + spacing)
+            
+            # Draw bar
+            canvas.create_rectangle(x, start_y, x + bar_width, start_y + 200, fill=color, outline='black')
+            
+            # Draw label
+            canvas.create_text(x + bar_width/2, start_y + 220, text=label, font=('Arial', 9))
+            canvas.create_text(x + bar_width/2, start_y + 240, text=f"{min_bmi}-{max_bmi}", font=('Arial', 8))
+            
+            # Highlight current category
+            if min_bmi <= current_bmi < max_bmi:
+                canvas.create_rectangle(x-5, start_y-5, x + bar_width+5, start_y + 205, outline='blue', width=3)
+        
+        # Show user info
+        info_text = (
+            f"Your Stats:\n"
+            f"Age: {self.current_age} years\n"
+            f"Weight: {self.current_weight} kg\n"
+            f"Height: {self.current_height*100:.0f} cm\n"
+            f"BMI: {current_bmi:.1f} - {self.get_bmi_category(current_bmi).value}"
+        )
+        
+        canvas.create_text(350, 300, text=info_text, font=('Arial', 12, 'bold'), justify=tk.CENTER)
+        
+        # Add explanation
+        explanation = "Blue highlighted area shows your current BMI category"
+        canvas.create_text(350, 330, text=explanation, font=('Arial', 10), fill='blue')
+
+    # Weitere Methoden hier einfügen...
     def calculate_bmi(self, weight, height):
         """Calculate BMI based on weight and height"""
         bmi = weight / (height ** 2)
@@ -165,7 +249,7 @@ class BMICalculatorGUI:
             return BMI_Category.OBESE_II
         else:
             return BMI_Category.OBESE_III
-    
+
     def calculate_bmr(self, weight, height_cm, age, gender):
         """Calculate Basal Metabolic Rate using Harris-Benedict formula"""
         if gender == "male":
@@ -238,6 +322,11 @@ class BMICalculatorGUI:
         gender = self.gender_var.get()
         activity_level = self.activity_var.get()
         
+        # Store for plotting
+        self.current_age = age
+        self.current_weight = weight
+        self.current_height = height_m
+        
         # Calculate BMI
         current_bmi = self.calculate_bmi(weight, height_m)
         bmi_category = self.get_bmi_category(current_bmi)
@@ -275,6 +364,11 @@ class BMICalculatorGUI:
         self.goal_weight_entry.delete(0, tk.END)
         self.gender_var.set("male")
         self.activity_var.set("sedentary")
+        
+        # Clear stored data
+        self.current_age = None
+        self.current_weight = None
+        self.current_height = None
         
         # Clear results
         self.current_bmi_label.config(text="")
