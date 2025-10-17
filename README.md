@@ -14,7 +14,7 @@ A comprehensive BMI (Body Mass Index) calculator with calorie tracking and visua
 
 ## Screenshots
 
-![BMI Calculator Interface](screenshot.png)
+![BMI Calculator Interface](BMI.png)
 *Main interface showing input fields and dynamic weight chart*
 
 ## Installation
