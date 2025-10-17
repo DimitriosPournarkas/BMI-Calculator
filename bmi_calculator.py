@@ -26,11 +26,30 @@ class BMI_Category(Enum):
     OBESE_II = "Obese Class II"
     OBESE_III = "Obese Class III"
 
+class Gender(Enum):
+    MALE = "male"
+    FEMALE = "female"
+
+class ActivityLevel(Enum):
+    SEDENTARY = 1.2
+    LIGHT = 1.375
+    MODERATE = 1.55
+    ACTIVE = 1.725
+    VERY_ACTIVE = 1.9
+
+class BMI_Category(Enum):
+    UNDERWEIGHT = "Underweight"
+    NORMAL = "Normal weight"
+    OVERWEIGHT = "Overweight"
+    OBESE_I = "Obese Class I"
+    OBESE_II = "Obese Class II"
+    OBESE_III = "Obese Class III"
+
 class BMICalculatorGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("BMI Calculator & Calorie Goal Tracker")
-        self.root.geometry("500x690")
+        self.root.geometry("600x950")  # Zurück zur originalen Größe
         self.root.resizable(True, True)
         
         # Store user data for plotting
@@ -39,7 +58,7 @@ class BMICalculatorGUI:
         self.current_height = None
         
         self.setup_styles()
-        self.create_widgets()
+        self.create_widgets() 
 
     def setup_styles(self):
         """Configure styles for the GUI"""
@@ -108,12 +127,10 @@ class BMICalculatorGUI:
             ttk.Radiobutton(activity_frame, text=text, variable=self.activity_var, 
                            value=value).grid(row=i, column=0, sticky=tk.W, pady=2)
         
-        # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=3, column=0, columnspan=2, pady=10)
         
         ttk.Button(button_frame, text="Calculate", command=self.calculate).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Show BMI Chart", command=self.show_bmi_chart_alternative).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Clear", command=self.clear_form).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Exit", command=self.root.quit).pack(side=tk.LEFT, padx=5)
         
@@ -151,163 +168,111 @@ class BMICalculatorGUI:
         self.time_goal_label = ttk.Label(results_frame, text="")
         self.time_goal_label.grid(row=6, column=1, sticky=tk.W, pady=2)
         
+        chart_frame = ttk.LabelFrame(main_frame, text="BMI Chart - Weight Ranges by Age", padding="10")
+        chart_frame.grid(row=5, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(10, 0))
+        
+        # Create canvas for chart
+        self.chart_canvas = tk.Canvas(chart_frame, width=450, height=250, bg='white', 
+                                    highlightthickness=1, highlightbackground='black')
+        self.chart_canvas.pack(fill=tk.BOTH, expand=True, pady=5)
+        
         # Configure grid weights for responsive layout
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         main_frame.columnconfigure(0, weight=1)
-    def show_bmi_chart_alternative(self):
-        """Alternative: Simple BMI chart without external libraries"""
-        if self.current_age is None:
-            messagebox.showwarning("Warning", "Please calculate your BMI first!")
-            return
         
-        chart_window = tk.Toplevel(self.root)
-        chart_window.title("BMI Weight Chart by Age")
-        chart_window.geometry("1000x700")
-        chart_window.resizable(True, True)
-        
-        # Main frame
-        main_frame = ttk.Frame(chart_window, padding="15")
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Title
-        title_label = ttk.Label(main_frame, text="Healthy Weight Ranges by Age", 
-                               font=('Arial', 16, 'bold'))
-        title_label.pack(pady=10)
-        
-        # Canvas for visualization
-        canvas_frame = ttk.Frame(main_frame)
-        canvas_frame.pack(fill=tk.BOTH, expand=True, pady=10)
-        
-        canvas = tk.Canvas(canvas_frame, width=950, height=500, bg='white', 
-                          highlightthickness=1, highlightbackground='black')
-        
-        # Scrollbar für horizontales Scrollen
-        h_scrollbar = ttk.Scrollbar(canvas_frame, orient="horizontal", command=canvas.xview)
-        canvas.configure(xscrollcommand=h_scrollbar.set)
-        
-        h_scrollbar.pack(side="bottom", fill="x")
-        canvas.pack(side="top", fill="both", expand=True)
+        self.draw_bmi_chart()
+    def draw_bmi_chart(self):
+        """Draw BMI chart in the main window"""
+        self.chart_canvas.delete("all")
         
         # Chart dimensions
-        chart_width = 1800
-        chart_height = 350
-        margin_left = 100
-        margin_top = 50
-        margin_bottom = 100
-        
-        # Set canvas scroll region
-        canvas.configure(scrollregion=(0, 0, chart_width + 200, 600))
+        chart_width = 400
+        chart_height = 200
+        margin_left = 50
+        margin_top = 30
         
         # Draw chart border
-        canvas.create_rectangle(margin_left, margin_top, 
-                              margin_left + chart_width, margin_top + chart_height, 
-                              outline='black')
+        self.chart_canvas.create_rectangle(margin_left, margin_top, 
+                                         margin_left + chart_width, margin_top + chart_height, 
+                                         outline='black')
         
         # BMI categories with colors
         bmi_categories = [
-            (0, 18.5, "Underweight", "#87CEEB"),      # lightblue
-            (18.5, 25, "Normal Weight", "#90EE90"),   # lightgreen  
-            (25, 30, "Overweight", "#FFFF00"),        # yellow
-            (30, 35, "Obese I", "#FFA500"),           # orange
-            (35, 100, "Obese II/III", "#FF0000")      # red
+            (0, 18.5, "Underweight", "#87CEEB"),
+            (18.5, 25, "Normal Weight", "#90EE90"),  
+            (25, 30, "Overweight", "#FFFF00"),
+            (30, 35, "Obese I", "#FFA500"),
+            (35, 100, "Obese II/III", "#FF0000")
         ]
         
-        # Draw weight ranges for EVERY year from 10 to 80 - FLIEßEND ohne Lücken
-        ages_to_show = list(range(10, 81))  # 10 bis 80 Jahre
-        total_years = 71  # 80 - 10 + 1 = 71 Jahre
-        bar_width = chart_width / total_years  # Balkenbreite berechnen für fließenden Übergang
+        # Draw weight ranges for sample ages
+        ages_to_show = list(range(15, 81, 3))
+        total_years = len(ages_to_show)
+        bar_width = chart_width / total_years
+        
+        # Standard height falls keine Eingabe
+        display_height = self.current_height if self.current_height else 1.7
         
         for i, age in enumerate(ages_to_show):
-            x_pos = margin_left + (i * bar_width) + (bar_width / 2)  # Zentriert
+            x_pos = margin_left + (i * bar_width) + (bar_width / 2)
             
-            # Draw age label on x-axis (nur jede 5 Jahre beschriften)
-            if age % 5 == 0:
-                canvas.create_text(x_pos, margin_top + chart_height + 20, 
-                                 text=str(age), font=('Arial', 8))
-                # Vertikale Linie für bessere Orientierung
-                canvas.create_line(x_pos, margin_top, x_pos, margin_top + chart_height, 
-                                 fill='gray', dash=(2,2))
+            # Draw age label on x-axis
+            if age % 15 == 0:
+                self.chart_canvas.create_text(x_pos, margin_top + chart_height + 12, 
+                                            text=str(age), font=('Arial', 7))
             
-            # Calculate weight ranges for this age
-            for category_index, (min_bmi, max_bmi, label, color) in enumerate(bmi_categories):
-                min_weight = min_bmi * (self.current_height ** 2)
-                max_weight = max_bmi * (self.current_height ** 2)
+            for min_bmi, max_bmi, label, color in bmi_categories:
+                min_weight = min_bmi * (display_height ** 2)
+                max_weight = max_bmi * (display_height ** 2)
                 
-                # Limit weight range for display
+                # Limit weight range
                 min_weight = max(0, min(min_weight, 150))
                 max_weight = max(0, min(max_weight, 150))
                 
-                if min_weight < max_weight:  # Only draw if valid range
+                if min_weight < max_weight:
                     y_min = margin_top + chart_height - (min_weight / 150) * chart_height
                     y_max = margin_top + chart_height - (max_weight / 150) * chart_height
                     
-                    # FLIEßENDE Balken ohne Lücken
-                    canvas.create_rectangle(
-                        x_pos - bar_width/2, y_max,    # Linke Kante
-                        x_pos + bar_width/2, y_min,    # Rechte Kante
-                        fill=color, outline=color, width=0  # Kein Outline für fließenden Look
+                    # Draw the weight range bar
+                    self.chart_canvas.create_rectangle(
+                        x_pos - bar_width/2, y_max,
+                        x_pos + bar_width/2, y_min,
+                        fill=color, outline=color, width=0
                     )
         
-        # Draw Y-axis labels (weight)
-        for weight in [0, 30, 60, 90, 120, 150]:
+        # Draw Y-axis labels
+        for weight in [0, 50, 100, 150]:
             y_pos = margin_top + chart_height - (weight / 150) * chart_height
-            canvas.create_text(margin_left - 15, y_pos, text=str(weight), 
-                             font=('Arial', 9), anchor='e')
-            canvas.create_line(margin_left - 5, y_pos, margin_left, y_pos, fill='black')
-            # Horizontale Linie für bessere Orientierung
-            canvas.create_line(margin_left, y_pos, margin_left + chart_width, y_pos, 
-                             fill='gray', dash=(1,2))
+            self.chart_canvas.create_text(margin_left - 8, y_pos, text=str(weight), 
+                                        font=('Arial', 7), anchor='e')
         
-        # Draw X-axis label
-        canvas.create_text(margin_left + chart_width/2, margin_top + chart_height + 45, 
-                          text="Age (years)", font=('Arial', 12, 'bold'))
+        # Draw axes labels
+        self.chart_canvas.create_text(margin_left + chart_width/2, margin_top + chart_height + 25, 
+                                    text="Age (years)", font=('Arial', 8, 'bold'))
+        self.chart_canvas.create_text(20, margin_top + chart_height/2, text="Weight (kg)", 
+                                    font=('Arial', 8, 'bold'), angle=90)
         
-        # Draw Y-axis label  
-        canvas.create_text(40, margin_top + chart_height/2, text="Weight (kg)", 
-                          font=('Arial', 12, 'bold'), angle=90)
+        # Punkt zeichnen wenn Daten vorhanden
+        if self.current_age and self.current_weight and self.current_height:
+            current_age_index = (self.current_age - 15) // 3
+            if 0 <= current_age_index < len(ages_to_show):
+                current_x = margin_left + (current_age_index * bar_width) + (bar_width / 2)
+                current_y = margin_top + chart_height - (self.current_weight / 150) * chart_height
+                
+                self.chart_canvas.create_oval(current_x - 5, current_y - 5, current_x + 5, current_y + 5, 
+                                            fill='blue', outline='darkblue', width=2)
         
-        # Draw current user position
-        current_age_index = self.current_age - 10  # Position im Array
-        current_x = margin_left + (current_age_index * bar_width) + (bar_width / 2)
-        current_y = margin_top + chart_height - (self.current_weight / 150) * chart_height
-        
-        canvas.create_oval(current_x - 8, current_y - 8, current_x + 8, current_y + 8, 
-                          fill='blue', outline='darkblue', width=3)
-        
-        # Mark current age line
-        canvas.create_line(current_x, margin_top, current_x, margin_top + chart_height, 
-                          fill='blue', width=2, dash=(4,2))
-        
-        # Draw legend - FESTE Position
-        legend_x = 50
-        legend_y = 400
-        
-        canvas.create_text(legend_x, legend_y - 20, text="Legend:", 
-                          font=('Arial', 10, 'bold'), anchor='w')
+        # Draw compact legend
+        legend_x = margin_left + 5
+        legend_y = margin_top + 5
         
         for i, (min_bmi, max_bmi, label, color) in enumerate(bmi_categories):
-            y_pos = legend_y + i * 25
-            canvas.create_rectangle(legend_x, y_pos, legend_x + 15, y_pos + 15, 
-                                  fill=color, outline='black')
-            canvas.create_text(legend_x + 20, y_pos + 7, text=label, 
-                             font=('Arial', 9), anchor='w')
-        
-        # Show user info
-        current_bmi = self.calculate_bmi(self.current_weight, self.current_height)
-        info_text = (
-            f"Your Position: Age {self.current_age}, Weight {self.current_weight}kg\n"
-            f"BMI: {current_bmi:.1f} ({self.get_bmi_category(current_bmi).value})\n"
-            f"Height: {self.current_height*100:.0f}cm"
-        )
-        
-        canvas.create_text(margin_left + chart_width/2, 450,
-                          text=info_text, font=('Arial', 11, 'bold'), justify=tk.CENTER)
-        
-        # Info Text für Scrollen
-        canvas.create_text(margin_left + chart_width/2, 480, 
-                          text="← Scroll → to see all ages", 
-                          font=('Arial', 9), fill='gray')
+            y_pos = legend_y + i * 15
+            self.chart_canvas.create_rectangle(legend_x, y_pos, legend_x + 10, y_pos + 10, 
+                                            fill=color, outline='black')
+            self.chart_canvas.create_text(legend_x + 12, y_pos + 5, text=label, 
+                                        font=('Arial', 6), anchor='w')
     def calculate_bmi(self, weight, height):
         """Calculate BMI based on weight and height"""
         bmi = weight / (height ** 2)
@@ -433,7 +398,9 @@ class BMICalculatorGUI:
             self.time_goal_label.config(text=f"{calorie_data['weeks_to_goal']} weeks to lose {abs(calorie_data['weight_difference']):.1f} kg")
         else:
             self.time_goal_label.config(text=f"{calorie_data['weeks_to_goal']} weeks to gain {calorie_data['weight_difference']:.1f} kg")
-    
+        
+        # ⭐⭐⭐ NEUE ZEILE: Graph mit Punkt zeichnen ⭐⭐⭐
+        self.draw_bmi_chart()
     def clear_form(self):
         """Clear all input fields and results"""
         self.age_entry.delete(0, tk.END)
