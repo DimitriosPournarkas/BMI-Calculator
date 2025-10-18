@@ -1,7 +1,8 @@
 # BMI Calculator & Calorie Goal Tracker
 
 A comprehensive BMI (Body Mass Index) calculator with calorie tracking and visual weight range analysis. This desktop application helps users monitor their health metrics and plan their fitness goals.
-
+## Download
+👉 [Get the latest release here (Win)]()
 ## Features
 
 - 📊 **BMI Calculation**: Calculate current and goal BMI based on height and weight
