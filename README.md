@@ -22,10 +22,7 @@ A comprehensive BMI (Body Mass Index) calculator with calorie tracking and visua
 ### Requirements
 
 - Python 3.7 or higher
-- tkinter (usually comes with Python)
-- matplotlib
-- numpy
-
+  
 ## Usage
 
 1. **Enter Personal Information**:
