@@ -2,7 +2,7 @@
 
 A comprehensive BMI (Body Mass Index) calculator with calorie tracking and visual weight range analysis. This desktop application helps users monitor their health metrics and plan their fitness goals.
 ## Download
-👉 [Get the latest release here (Win)]()
+👉 [Get the latest release here](https://github.com/DimitriosPournarkas/BMI-Calculator/releases/tag/V1)
 ## Features
 
 - 📊 **BMI Calculation**: Calculate current and goal BMI based on height and weight
